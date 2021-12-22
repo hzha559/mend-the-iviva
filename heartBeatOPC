@@ -1,0 +1,96 @@
+#print("hello")
+import OpenOPC
+import pywintypes
+import time
+import os
+
+
+def restart():
+    try:
+        f = open("C:/Users/Administrator/Desktop/lightingOPCcrashLog.txt", "r")
+        if time.time()-float(f.readlines()[-3][9:])>1200:
+            print("the program commits suicide")
+            time.sleep(10)
+            #os.system("shutdown /r /t 1")
+        else:
+            print("the program commits suicide in 10 min")
+            time.sleep(1000);
+            #os.system("shutdown /r /t 1")
+            
+    except:
+        print("the program commits suicide, while the log file is lost")
+        time.sleep(10)
+        #os.system("shutdown /r /t 1")
+        
+def writelog():
+    try:
+        f=open("C:/Users/Administrator/Desktop/lightingOPCcrashLog.txt", "a+")
+        f.write("\n")
+        f.write("crach at "+str(time.asctime()))
+        f.write("\n")
+        f.write("crach at "+str(time.time()))
+        f.close()
+    except:
+        f= open("C:/Users/Administrator/Desktop/lightingOPCcrashLog.txt","w+")
+        f.write("crach at "+str(time.asctime()))
+        f.write("\n")
+        f.write("crach at "+str(time.time()))
+        f.close()
+    
+while(1):    
+    opc=OpenOPC.client()
+    print(opc.servers())
+    try:
+        opc.connect('Tunneller:10.35.26.10:Philips.EMOpcDaServer.1')
+    except:
+        time.sleep(5)
+        try:
+            opc.connect('Tunneller:10.35.26.10:Philips.EMOpcDaServer.1')
+        except:
+            writelog()
+            restart()
+    pywintypes.datetime=pywintypes.TimeType
+    ###################################maybe don't need below
+    print(opc.list())
+    a=opc.list('Presets [0800][<none>]')
+    buffer=[]
+    success=0
+
+    for i in a:# at a single moment 
+                #print("this is i ",i)
+                try:
+                    c=opc.read(i)
+                except:
+                    time.sleep(5)
+                    try:
+                        c=opc.read(i)
+                    except:
+                        restart()
+                        
+                #print(c)
+                if c[0]==4:
+                    FirstWrite=opc.write((i,3))
+                    time.sleep(1)
+                    print('after ',opc.read(i))
+                    SecondWrite=opc.write((i,4))
+                    time.sleep(1)
+                    if FirstWrite=='Success' and SecondWrite=='Success':
+                        success+=1
+                    buffer.append(i)
+                    print("buffer: success:",len(buffer),success)
+                if len(buffer)==4 and success==4:#this means the system can sleep now
+                    break
+                if len(buffer)>4 and success<=2:
+                    writelog()
+                    restart()
+                    break
+                if len(buffer)==len(a)-5:#go to the end
+                    writelog()
+                    restart()
+                    break
+    print("all good, sleep now")
+    time.sleep(1200)
+
+                
+            
+            
