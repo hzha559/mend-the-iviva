@@ -1,0 +1,434 @@
+from pymodbus.client.sync import ModbusTcpClient
+import time
+import os
+
+import smtplib, ssl
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+
+def email(nbr):
+    print("nbr ",nbr)
+    mail_content = '''Hi Shao, this is down
+    '''+nbr
+    #The mail addresses and password
+    sender_address = ''
+    sender_pass = ''
+    receiver_address = ''
+    #Setup the MIME
+    message = MIMEMultipart()
+    message['From'] = sender_address
+    message['To'] = receiver_address
+    message['Subject'] = 'A test mail sent by Python. It has an attachment.'   #The subject line
+    #The body and the attachments for the mail
+    message.attach(MIMEText(mail_content, 'plain'))
+    #Create SMTP session for sending the mail
+    session = smtplib.SMTP('smtp.gmail.com', 587) #use gmail with port
+    session.starttls() #enable security
+    session.login(sender_address, sender_pass) #login with mail_id and password
+    text = message.as_string()
+    #session.sendmail(sender_address, receiver_address, text)
+    session.quit()
+    print('Mail Sent')
+        
+def writelog(a):
+    f=open("C:/Users/Administrator/Desktop/liftLog.txt", "w")
+    f.writelines(text)
+    f.close()        
+    try:
+        f=open("C:/Users/Administrator/Desktop/liftLog.txt", "a+")
+        #f.write("\n")
+        for i in a:
+            #print(i)
+            f.write(str(i))
+            f.write("\n")
+        f.close()
+    except:
+        f=open("C:/Users/Administrator/Desktop/liftLog.txt", "a+")
+        #f.write("\n")
+        #f.write(a)
+        for i in a:
+            #print(i)
+            f.write(str(i))
+            f.write("\n")
+        f.close()
+
+
+        
+def compare(a):
+        notactivetime=[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
+        #try:
+        f=open("C:/Users/Administrator/Desktop/liftLog.txt", "r")
+        text=f.readlines()
+        f.close()  
+        print(text[0])
+        print(a)
+        if float(text[0])==a[0]:
+            if time.time()-float(text[1])>36000:
+                print("lift 1 not working")
+            else:
+                print("lift 1 not update")
+                #email(1)
+            notactivetime[0]=time.time()-float(text[1])
+        else:
+                print("lift 1 update")
+                text[0]=str(a[0])+"\n"
+                text[1]=str(a[1])+"\n"
+                notactivetime[0]=0.0
+                
+        if float(text[2])==a[2]:
+            if time.time()-float(text[3])>36000:
+                print("lift 2 not working")
+            else:
+                print("lift 2 not update")
+                #email(2)
+            notactivetime[1]=time.time()-float(text[3])
+        else:
+                print("lift 2 update")
+                text[2]=str(a[2])+"\n"
+                text[3]=str(a[3])+"\n"
+                notactivetime[1]=0.0
+                
+        if float(text[4])==a[4]:
+            if time.time()-float(text[5])>36000:
+                print("lift 3 not working")
+                #email(3)
+            else:
+                print("lift 3 not update")
+            notactivetime[2]=time.time()-float(text[5])
+        else:
+                print("lift 3 update")
+                text[4]=str(a[4])+"\n"
+                text[5]=str(a[5])+"\n"
+                notactivetime[2]=0.0
+                
+        if float(text[6])==a[6]:
+            if time.time()-float(text[7])>36000:
+                print("lift 4 not working")
+                #email(4)
+            else:
+                print("lift 4 not update")
+            notactivetime[3]=time.time()-float(text[7])
+        else:
+                print("lift 4 update")
+                text[6]=str(a[6])+"\n"
+                text[7]=str(a[7])+"\n"
+                notactivetime[3]=0.0
+                
+        if float(text[8])==a[8]:
+            if time.time()-float(text[9])>36000:
+                print("lift 5 not working")
+                #email(5)
+            else:
+                print("lift 5 not update")
+            notactivetime[4]=time.time()-float(text[9])
+        else:
+                print("lift 5 update")
+                text[8]=str(a[8])+"\n"
+                text[9]=str(a[9])+"\n"
+                notactivetime[4]=0.0
+                
+        if float(text[10])==a[10]:
+            if time.time()-float(text[11])>36000:
+                print("lift 6 not working")
+                #email(6)
+            else:
+                print("lift 6 not update")
+            notactivetime[5]=time.time()-float(text[11])
+        else:
+                print("lift 6 update")
+                text[10]=str(a[10])+"\n"
+                text[11]=str(a[11])+"\n"
+                notactivetime[5]=0.0
+
+
+        if float(text[12])==a[12]:
+            if time.time()-float(text[13])>36000:
+                print("lift 7 not working")
+                #email(6)
+            else:
+                print("lift 7 not update")
+            notactivetime[6]=time.time()-float(text[13])
+        else:
+                print("lift 7 update")
+                text[12]=str(a[12])+"\n"
+                text[13]=str(a[13])+"\n"
+                notactivetime[6]=0.0
+
+        if float(text[14])==a[14]:
+            if time.time()-float(text[15])>36000:
+                print("lift 8 not working")
+                #email(6)
+            else:
+                print("lift 8 not update")
+            notactivetime[7]=time.time()-float(text[15])
+        else:
+                print("lift 8 update")
+                text[14]=str(a[14])+"\n"
+                text[15]=str(a[15])+"\n"
+                notactivetime[7]=0.0
+
+        if float(text[16])==a[16]:
+            if time.time()-float(text[17])>36000:
+                print("lift 9 not working")
+                #email(6)
+            else:
+                print("lift 9 not update")
+            notactivetime[8]=time.time()-float(text[17])
+        else:
+                print("lift 9 update")
+                text[16]=str(a[16])+"\n"
+                text[17]=str(a[17])+"\n"
+                notactivetime[8]=0.0
+
+        if float(text[18])==a[18]:
+            if time.time()-float(text[19])>36000:
+                print("lift 10 not working")
+                #email(6)
+            else:
+                print("lift 10 not update")
+            notactivetime[9]=time.time()-float(text[19])
+        else:
+                print("lift 10 update")
+                text[18]=str(a[18])+"\n"
+                text[19]=str(a[19])+"\n"
+                notactivetime[9]=0.0
+
+        if float(text[20])==a[20]:
+            if time.time()-float(text[21])>36000:
+                print("lift 11 not working")
+                #email(6)
+            else:
+                print("lift 11 not update")
+            notactivetime[10]=time.time()-float(text[21])
+        else:
+                print("lift 11 update")
+                text[20]=str(a[20])+"\n"
+                text[21]=str(a[21])+"\n"
+                notactivetime[10]=0.0
+
+        if float(text[22])==a[22]:
+            if time.time()-float(text[23])>36000:
+                print("lift 12 not working")
+                #email(6)
+            else:
+                print("lift 12 not update")
+            notactivetime[11]=time.time()-float(text[23])
+        else:
+                print("lift 12 update")
+                text[22]=str(a[22])+"\n"
+                text[23]=str(a[23])+"\n"
+                notactivetime[11]=0.0
+
+        if float(text[24])==a[24]:
+            if time.time()-float(text[25])>36000:
+                print("lift 13 not working")
+                #email(6)
+            else:
+                print("lift 13 not update")
+            notactivetime[12]=time.time()-float(text[25])
+        else:
+                print("lift 13 update")
+                text[24]=str(a[24])+"\n"
+                text[25]=str(a[25])+"\n"
+                notactivetime[12]=0.0
+
+        if float(text[26])==a[26]:
+            if time.time()-float(text[27])>36000:
+                print("lift 14 not working")
+                #email(6)
+            else:
+                print("lift 14 not update")
+            notactivetime[13]=time.time()-float(text[27])
+        else:
+                print("lift 14 update")
+                text[26]=str(a[26])+"\n"
+                text[27]=str(a[27])+"\n"
+                notactivetime[13]=0.0
+        
+        if float(text[28])==a[28]:
+            if time.time()-float(text[29])>36000:
+                print("lift 15 not working")
+                #email(6)
+            else:
+                print("lift 15 not update")
+            notactivetime[14]=time.time()-float(text[29])
+        else:
+                print("lift 15 update")
+                text[28]=str(a[28])+"\n"
+                text[29]=str(a[29])+"\n"
+                notactivetime[14]=0.0
+
+        if float(text[30])==a[30]:
+            if time.time()-float(text[31])>36000:
+                print("lift 19 not working")
+                #email(6)
+            else:
+                print("lift 19 not update")
+            notactivetime[15]=time.time()-float(text[31])
+        else:
+                print("lift 19 update")
+                text[30]=str(a[30])+"\n"
+                text[31]=str(a[31])+"\n"
+                notactivetime[15]=0.0
+        
+        '''
+        if float(text[32])==a[32]:
+            if time.time()-float(text[33])>36000:
+                print("lift 20 not working")
+                #email(6)
+            else:
+                print("lift 20 not update")
+        else:
+                print("lift 20 update")
+                text[32]=str(a[32])+"\n"
+                text[33]=str(a[33])+"\n"
+                '''
+        print(text)
+        f=open("C:/Users/Administrator/Desktop/liftLog.txt", "w")
+        f.writelines(text)
+        f.close()
+        
+        try:
+            f=open("C:/Users/Administrator/Desktop/notactivetime.txt", "w")
+            f.writelines("")
+            f.close()
+            f=open("C:/Users/Administrator/Desktop/notactivetime.txt", "a+")
+            #f.write("\n")
+            for i in notactivetime:
+                #print(i)
+                f.write(str(i))
+                f.write("\n")
+            f.write(" ")
+            f.write("\n")
+            f.write(time.asctime())
+            f.close()
+        except:
+            print("write log error")
+    #except:
+        #print("oh cock")
+        
+
+while(1):
+    a=[]
+    try:
+        client = ModbusTcpClient('10.35.64.10',port=502,timeout=1)
+        #client.write_coil(1, True)
+        #result = client.read_coils(0,1,unit=1)
+        #client.execute(result)
+        result=client.read_holding_registers(0,11,unit=1)
+        client.close()
+        for i in range(6):
+            a.append(result.registers[i*2])
+            a.append(time.time())
+    except:
+        email('10.35.64.10')
+        f=open("C:/Users/Administrator/Desktop/restart.txt", "a+")
+        f.write("\n")
+        f.write("crach at "+str(time.asctime()))
+        f.write("\n")
+        f.write("crach at 10.35.64.10")
+        f.close()
+        for i in range(6):
+            a.append(99)
+            a.append(99.9)
+
+    try:
+        client = ModbusTcpClient('10.35.64.13',port=502,timeout=1)
+        result=client.read_holding_registers(0,11,unit=1)
+        client.close()
+        for i in range(6):
+            a.append(result.registers[i*2])
+            a.append(time.time())
+    except:
+        email('10.35.64.13')
+        f=open("C:/Users/Administrator/Desktop/restart.txt", "a+")
+        f.write("\n")
+        f.write("crach at "+str(time.asctime()))
+        f.write("\n")
+        f.write("crach at 10.35.64.13")
+        f.close()
+        for i in range(6):
+            a.append(99)
+            a.append(99.9)
+
+    try:   
+        client = ModbusTcpClient('10.35.64.11',port=502,timeout=1)
+        result=client.read_holding_registers(0,1,unit=1)
+        client.close()
+        #print(result.registers[0])
+        a.append(result.registers[0])
+        a.append(time.time())
+    except:
+        email('10.35.64.11')
+        f=open("C:/Users/Administrator/Desktop/restart.txt", "a+")
+        f.write("\n")
+        f.write("crach at "+str(time.asctime()))
+        f.write("\n")
+        f.write("crach at 10.35.64.11")
+        f.close()
+        #for i in range(6):
+        a.append(99)
+        a.append(99.9)
+
+    try:
+        client = ModbusTcpClient('10.35.64.14',port=502,timeout=1)
+        result=client.read_holding_registers(0,3,unit=1)
+        client.close()
+        for i in range(2):
+            #print(result.registers[i*2])
+            a.append(result.registers[i*2])
+            a.append(time.time())
+    except:
+        email('10.35.64.14')
+        f=open("C:/Users/Administrator/Desktop/restart.txt", "a+")
+        f.write("\n")
+        f.write("crach at "+str(time.asctime()))
+        f.write("\n")
+        f.write("crach at 10.35.64.14")
+        f.close()
+        for i in range(2):
+            a.append(99)
+            a.append(99.9)
+
+    try:
+        client = ModbusTcpClient('10.35.64.12',port=502,timeout=1)
+        result=client.read_holding_registers(0,1,unit=1)
+        client.close()
+        #print(result.registers[0])
+        a.append(result.registers[0])
+        a.append(time.time())
+        #print(len(a))
+    except:
+        email('10.35.64.12')
+        f=open("C:/Users/Administrator/Desktop/restart.txt", "a+")
+        f.write("\n")
+        f.write("crach at "+str(time.asctime()))
+        f.write("\n")
+        f.write("crach at 10.35.64.12")
+        f.close()
+        #for i in range(6):
+        a.append(99)
+        a.append(99.9)
+        ''''''
+    try:
+            f=open("C:/Users/Administrator/Desktop/liftLog.txt", "r")
+            text=f.readlines()
+            f.close()
+            if len(text)<20:
+                f=open("C:/Users/Administrator/Desktop/liftLog.txt", "w")
+                f.writelines("")
+                f.close()
+                
+                f=open("C:/Users/Administrator/Desktop/liftLog.txt", "a+")
+                for i in a:
+                    #print(i)
+                    f.write(str(i))
+                    f.write("\n")
+                f.close() # rewrite corrputed file
+    except:
+        print("can't overwrite")
+    print("here ",a) 
+    compare(a)
+    time.sleep(150)
+    #writelog(a)
+
