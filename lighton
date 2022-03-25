@@ -1,0 +1,40 @@
+DROP TABLE IF EXISTS #temp1
+GO
+declare @time datetime=getdate()
+	declare @lastday datetime
+	set @lastday = dateadd(day,-1,@time)
+SELECT 
+      --[PointValueUpdatedTime],
+	  AssetID,
+	  PointTemplateName,
+	  case 
+	  when AssetID like '%B01%' then 'B01'
+	  when AssetID like '%B02%' then 'B02'
+	  when AssetID like '%GF%' then 'GF'
+	  when AssetID like '%L01%' then 'L01'
+		when AssetID like '%L02%' then 'L02'
+		when AssetID like '%L03%' then 'L03'
+		when AssetID like '%L04%' then 'L04'
+		when AssetID like '%L05%' then 'L05'
+		when AssetID like '%L06%' then 'L06'
+		when AssetID like '%L07%' then 'L07'
+		when AssetID like '%L08%' then 'L08'
+		when AssetID like '%L09%' then 'L09'
+		when AssetID like '%L10%' then 'L10'
+		else ''
+	  end as level
+	  into #temp1
+  FROM [510cs].[dbo].[IBMSPointLastValues] v
+  inner join IBMSPoints p on v.PointKey=p.PointKey
+  inner join IBMSPointTemplates pt on pt.PointTemplateKey=p.PointTemplateKey
+  inner join assetmaster am on am.AssetKey=p.AssetKey
+  where (PointTemplateName like '%Lighting Control%'
+  or PointTemplateName like '%Light%')
+  and PointValue>'0'
+  and PointValueUpdatedTime>@lastday
+  order by AssetID asc
+
+  select count(AssetID) as num,level 
+ 
+  from #temp1
+  group by level
