@@ -1,0 +1,77 @@
+USE [510cs]
+GO
+
+/****** Object:  StoredProcedure [dbo].[Cl_peoplecount]    Script Date: 28/03/2022 2:38:58 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE PROCEDURE [dbo].[Cl_peoplecount] 
+@lastday datetime
+,@time datetime ---=getdate()
+
+
+AS
+BEGIN
+
+
+	---set @lastday = dateadd(day,-1,@time)
+
+
+declare @TimezoneName varchar(max) = 'AUS Eastern Standard Time'
+declare @timezoneOffset bigint = Datediff( MINUTE, getdate() at time zone @TimezoneName, getdate() )
+--select SWITCHOFFSET(getdate(), @timezoneOffset) 
+
+DROP TABLE IF EXISTS #temp1
+	
+--declare @time datetime --='2022-03-03 00:00:00'---=getdate()
+--declare @lastday datetime--='2022-03-01 00:00:00'
+set @time=SWITCHOFFSET(@time, -@timezoneOffset) 
+set @lastday=SWITCHOFFSET(@lastday, -@timezoneOffset) 
+SELECT 
+      --[PointValueUpdatedTime],
+	  p.PointKey,
+	  AssetID,
+	  PointTemplateName,
+	  case 
+	  when AssetID like '%B01%' then 'B01'
+	  when AssetID like '%B02%' then 'B02'
+	  when AssetID like '%GF%' then 'GF'
+	  when AssetID like '%L01%' then 'L01'
+		when AssetID like '%L02%' then 'L02'
+		when AssetID like '%L03%' then 'L03'
+		when AssetID like '%L04%' then 'L04'
+		when AssetID like '%L05%' then 'L05'
+		when AssetID like '%L06%' then 'L06'
+		when AssetID like '%L07%' then 'L07'
+		when AssetID like '%L08%' then 'L08'
+		when AssetID like '%L09%' then 'L09'
+		when AssetID like '%L10%' then 'L10'
+		else ''
+	  end as level
+	  into #temp1
+  FROM IBMSPoints p
+  inner join IBMSPointTemplates pt on pt.PointTemplateKey=p.PointTemplateKey
+  inner join assetmaster am on am.AssetKey=p.AssetKey
+  where PointTemplateName like '%SensorInCountPeople%'
+  --or PointTemplateName like '%SensorOutCountPeople%')
+  order by AssetID asc
+
+
+  --------------------
+  select sum(convert(int, PointValue)) as total,level, CONVERT(DATETIME,TransactionDateTime AT TIME ZONE 'UTC' AT TIME ZONE 'AUS Eastern Standard Time') as TransactionDateTime,pointTemplateName from #temp1 t
+  inner join IBMSTrends_510 tr on tr.PointKey=t.PointKey
+  where TransactionDateTime >@lastday
+  and TransactionDateTime <@time
+  and CONVERT(VARCHAR(50), TransactionDateTime,120) LIKE '%:00:%'
+  --or CONVERT(VARCHAR(50), TransactionDateTime,120) LIKE '%:30:%')
+  group by level, pointTemplateName,TransactionDateTime
+  order by level,TransactionDateTime
+
+
+ end
+GO
+
+
