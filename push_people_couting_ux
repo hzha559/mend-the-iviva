@@ -1,0 +1,9 @@
+select * from (select tr.pointkey,pointvalue,transactiondatetime, 
+ROW_NUMBER() OVER(PARTITION BY left(CONVERT(VARCHAR(30), tr.transactiondatetime, 120),13) 
+ORDER BY trendkey) AS row 
+from IBMSTrends_510 tr inner join ibmspoints p on p.pointkey=tr.pointkey 
+where p.pointkey =5695----5696
+and transactiondatetime>'2022-04-01 03:00'  
+and transactiondatetime<'2022-04-03 15:30' 
+and pointvalue is not null ) as a 
+where row = 1 order by TransactionDateTime asc
