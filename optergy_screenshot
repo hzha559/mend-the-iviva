@@ -1,0 +1,185 @@
+from time import sleep
+from selenium import webdriver
+from selenium.webdriver import ActionChains
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support.ui import Select
+import time
+from selenium.webdriver.common.keys import Keys
+#written by Clarence in 07/03/2022
+import random
+from PIL import Image
+
+##################don't usually need to change this section########################################
+def login(url,username,pwd):
+    try:
+        driver.get(url) #change to your optergy site
+        driver.implicitly_wait(10)
+    except:
+        print('communication error')
+    Username = driver.find_element_by_xpath('//*[@id="username-input"]');
+    driver.implicitly_wait(10)
+    Username.send_keys(username); #place username
+    PW = driver.find_element_by_xpath('//*[@id="password-input"]');
+    driver.implicitly_wait(10)
+    PW.send_keys(pwd); #place password
+    #driver.implicitly_wait(10);
+    PW.send_keys(Keys.ENTER)
+    #logged now
+    time.sleep(1)
+
+
+def saveimage(meter_list,towerid):
+    for i in range(len(meter_list)):
+        driver.get(meter_list[i])
+        #click image
+        time.sleep(1)
+        driver.implicitly_wait(10)
+        img = driver.find_element_by_xpath('//*[@id="non-smart-cons-img"]');
+        #time.sleep(5)
+        driver.implicitly_wait(10)
+        #print("display "+img.is_displayed())
+        img.click();
+        driver.switch_to.window(driver.window_handles[-1])
+        img=driver.find_element_by_xpath('//*[@id="bottom-toolbar"]/table/tbody/tr/td[2]/div[6]/img');
+        driver.implicitly_wait(10)
+        img.click();
+        time.sleep(0.5)
+        img = driver.find_element_by_xpath('//*[@id="advanced-form"]/table/tbody/tr[1]/td[5]/div/img');
+        img.click();
+        time.sleep(0.5)
+        img = driver.find_element_by_xpath('//*[@id="chartlabelCheck"]')
+        driver.implicitly_wait(10)
+        img.click();
+        time.sleep(0.5)
+        update= driver.find_element_by_xpath('/html/body/div[23]/div[11]/div/button[1]/span')
+        driver.implicitly_wait(10)
+        update.click()
+        time.sleep(0.5)
+        close=driver.find_element_by_xpath('/html/body/div[21]/div[11]/div/button/span')
+        driver.implicitly_wait(10)
+        close.click()
+        time.sleep(0.5)
+        time1=driver.find_element_by_xpath('//*[@id="bottom-toolbar"]/table/tbody/tr/td[1]/div[2]/img')
+        driver.implicitly_wait(10)
+        time1.click()
+        time.sleep(0.5)
+        drop=driver.find_element_by_xpath('//*[@id="this-time-scale"]/option[4]')
+        driver.implicitly_wait(10)
+        drop.click()
+        time.sleep(0.5)
+
+        timebox= driver.find_element_by_xpath('//*[@id="show-comparison-checkbox"]')
+        driver.implicitly_wait(10)
+        timebox.click()
+        time.sleep(0.5)
+        prev= driver.find_element_by_xpath('//*[@id="time-period-selection-previous-year-comparison"]')
+        driver.implicitly_wait(10)
+        prev.click()
+        time.sleep(0.5)
+        up=driver.find_element_by_xpath('//*[@id="time-period-form"]/div[3]/table/tbody/tr[2]/td[2]/label/button[2]')
+        driver.implicitly_wait(10)
+        up.click()
+        time.sleep(0.5)
+        update=driver.find_element_by_xpath('/html/body/div[21]/div[11]/div/button[1]/span')
+        driver.implicitly_wait(10)
+        update.click()
+        chart=driver.find_element_by_xpath('//*[@id="chart"]')
+        time.sleep(5)#give it enought time to load
+        driver.implicitly_wait(10)
+        #driver.switch_to.window(driver.window_handles[0])
+        
+        driver.save_screenshot(towerid+str(i)+'.png')
+        driver.close()
+        driver.switch_to.window(driver.window_handles[0])
+        
+        img = Image.open(towerid+str(i)+".png")
+        area = (100,2, 1850,850)
+        cropped_img = img.crop(area)
+        #cropped_img.show()
+        cropped_img.save(towerid+str(i)+'.png')
+        time.sleep(1)
+    #driver.close()
+    time.sleep(1)
+################################################################################
+
+
+#######################define parameters below##########################################
+tower='all'#options are: t1,t2,t3,b,all
+password=["123Optergy","123Optergy","Optergy123","Optergy123"]
+username="Optergy.Support"
+site=["http://10.0.65.250/","http://10.1.65.75/","http://10.2.65.75","http://10.3.65.75"]
+
+
+#use unique meter id to find the meter, don't need to worry about unless
+#there is a major change in optergy
+
+meter_list0=['http://10.0.65.250/meters/MeterDisplay.html?meter.id=593',
+                'http://10.0.65.250/meters/MeterDisplay.html?meter.id=591',
+                'http://10.0.65.250/meters/MeterDisplay.html?meter.id=590',
+                'http://10.0.65.250/meters/MeterDisplay.html?meter.id=592',
+                'http://10.0.65.250/meters/MeterDisplay.html?meter.id=264',
+                'http://10.0.65.250/meters/MeterDisplay.html?meter.id=601',
+                'http://10.0.65.250/meters/MeterDisplay.html?meter.id=602']
+
+meter_list1=[] # you should blame optergy for this
+
+
+meter_list2=['http://10.2.65.75/meters/MeterDisplay.html?meter.id=1085',
+                'http://10.2.65.75/meters/MeterDisplay.html?meter.id=1089',
+                'http://10.2.65.75/meters/MeterDisplay.html?meter.id=1275',
+                'http://10.2.65.75/meters/MeterDisplay.html?meter.id=1091',
+                'http://10.2.65.75/meters/MeterDisplay.html?meter.id=1255',
+                'http://10.2.65.75/meters/MeterDisplay.html?meter.id=1090',
+                'http://10.2.65.75/meters/MeterDisplay.html?meter.id=1283',
+                'http://10.2.65.75/meters/MeterDisplay.html?meter.id=926']
+
+meter_list3=['http://10.3.65.75/meters/MeterDisplay.html?meter.id=1025',
+                'http://10.3.65.75/meters/MeterDisplay.html?meter.id=1026',
+                'http://10.3.65.75/meters/MeterDisplay.html?meter.id=1138',
+                'http://10.3.65.75/meters/MeterDisplay.html?meter.id=1027',
+                'http://10.3.65.75/meters/MeterDisplay.html?meter.id=1135',
+                'http://10.3.65.75/meters/MeterDisplay.html?meter.id=1153',
+                'http://10.3.65.75/meters/MeterDisplay.html?meter.id=1151',
+                'http://10.3.65.75/meters/MeterDisplay.html?meter.id=1136',
+                'http://10.3.65.75/meters/MeterDisplay.html?meter.id=1154']
+                
+#############################################################
+
+options = webdriver.ChromeOptions()
+options.add_argument('ignore-certificate-errors')
+
+#driver = webdriver.Chrome(options=options) #this is automatic, but might cause error
+driver = webdriver.Chrome(executable_path=r"C:\Users\czhao\Downloads\chrome\chromedriver.exe")
+#this is important, you need to download the correct chrome driver corresponding to your chrome version
+
+
+driver.set_window_position(0, 0)
+driver.set_window_size(1920, 1080)# fix the size of the page, don't zoom it
+
+if tower=='b':
+    login(site[0],username,password[0])
+    saveimage(meter_list0,'b ')
+elif tower=='t1':
+    login(site[1],username,password[1])
+    saveimage(meter_list1,'t1 ')
+elif tower=='t2':
+    login(site[2],username,password[2])
+    saveimage(meter_list2,'t2 ')
+elif tower=='t3':
+    login(site[3],username,password[3])
+    saveimage(meter_list3,'t3 ')
+elif tower=='all':
+    login(site[0],username,password[0])
+    saveimage(meter_list0,'b ')
+    login(site[1],username,password[1])
+    saveimage(meter_list1,'t1 ')
+    login(site[2],username,password[2])
+    saveimage(meter_list2,'t2 ') 
+    login(site[3],username,password[3])
+    saveimage(meter_list3,'t3 ')
+else:
+    print("wrong tower id you idiot")
+
+
+
+
