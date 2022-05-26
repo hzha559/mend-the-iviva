@@ -1,0 +1,92 @@
+
+import pymssql
+import requests
+import smtplib, ssl
+import time
+
+from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
+from email import encoders
+
+
+
+
+
+def send_mail():
+        attachment = "points.csv"
+
+        msg = MIMEMultipart()
+        msg['Subject'] = "Email a csv file"
+        msg['Body'] = "find the attachment"
+        msg['From'] = "donotbeat@gmail.com"
+        msg['To'] = "clare007@gmail.com"
+
+        part = MIMEBase('application', "octet-stream")
+        part.set_payload(open(attachment, "rb").read())
+        encoders.encode_base64(part)
+
+        part.add_header('Content-Disposition', 'attachment', filename=attachment)
+
+        msg.attach(part)
+
+        with smtplib.SMTP('smtp.gmail.com',587) as server:
+            server.ehlo()
+            server.starttls()
+            server.ehlo()
+
+            server.login('donott@gmail.com','me0')
+            server.send_message(msg)
+              
+
+
+def task1():
+        conn = pymssql.connect(host='10.35.10.104', user='sa', password='QcP@ssw0rd1!', database='qc')
+            
+        cur = conn.cursor()
+        query='select pointerror,p.pointkey,assetid,pointvalueupdatedtime,InterfaceID from('
+        query+=' SELECT pointerror,v.pointkey,pointvalueupdatedtime,interfacekey,'
+        query+=' ROW_NUMBER() OVER (PARTITION BY pointerror Order by v.pointkey DESC) AS rown'
+        query+=' FROM IBMSPointLastValues v'
+        query+=' inner join ibmspoints pt on pt.pointkey=v.pointkey'
+        query+=' where pointerror <> \'\' )rnk'
+        query+=' inner join ibmspoints p on p.PointKey=rnk.PointKey'
+        query+=' inner join IBMSInterfaceMaster i on i.Interfacekey=p.InterfaceKey'
+        query+=' inner join AssetMaster a on a.AssetKey=p.AssetKey where rown=1'
+        print(query)
+        cur.execute(query)    
+        result = cur.fetchall()
+        print(result)
+        conn.close()
+        return result
+def writelog(file):
+    try:
+        f=open("C:/Users/Administrator/Desktop/points.csv", "a+")
+        for i in file:
+                for j in i:
+                        #print(j)
+                        f.write(str(j))
+                        f.write(",")
+                f.write("\n")
+        f.close()
+    except:
+        f= open("C:/Users/Administrator/Desktop/points.csv","w+")
+        for i in file:
+                for j in i:
+                        #print(j)
+                        f.write(str(j))
+                        f.write(",")
+                f.write("\n")
+        f.close()            
+def post():
+    result=task1()
+    #print(result)
+    writelog(result)
+    send_mail()
+    #x= requests.get('http://103.134.21.33:1235/ping')
+    #print(x.status_code)
+    '''
+    x = requests.post('http://103.134.21.33:1235/post', data = myobj)
+    print(x.status_code)
+    '''
+
+post()
