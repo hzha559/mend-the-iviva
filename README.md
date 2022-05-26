@@ -9,3 +9,5 @@ need to choose the default chrome webdriver or download one if the default doesn
 “*” API endpoint: contact Clarence to get one, yes it is 100 times faster than lucy
 
 “*” iviva bulk change SOMETHING: a web crawler to do stupid tasks in iviva
+
+"*" sendpointerror: send an email with a csv which lists all current points offline for a site
