@@ -1,0 +1,36 @@
+DROP TABLE IF EXISTS #temp1
+CREATE TABLE #temp1
+(
+   trendkey INT,
+   pointkey INT,
+   pointvalue nvarchar(max),
+   transactiondatetime datetime
+)
+
+declare @from datetime= N'2022-09-01'
+declare		@to datetime= N'2022-09-10'
+declare		@asset nvarchar(max)= N'PS-B-ELE-L05-EM058'
+
+declare @from1 datetime= @from AT TIME ZONE 'AUS Eastern Standard Time' AT TIME ZONE 'UTC'
+declare @to1 datetime = @to AT TIME ZONE 'AUS Eastern Standard Time' AT TIME ZONE 'UTC'
+ 
+
+DECLARE	@return_value int
+DECLARE @Points VARCHAR(MAX)
+select @Points=COALESCE(@Points + ',', '') + convert(VARCHAR,p.PointKey) 
+FROM IBMSPoints p
+  inner join IBMSPointTemplates pt on pt.PointTemplateKey=p.PointTemplateKey
+  inner join assetmaster am on am.AssetKey=p.AssetKey
+  where (PointTemplateName ='Total Active Energy')
+  and assetid=@asset
+  --or PointTemplateName like '%SensorOutCountPeople%')
+  --order by AssetID asc
+INSERT #temp1 EXEC	@return_value = [dbo].[GetTrendData_MultiDB_DBServer]
+		@from = @from1,
+		@to = @to1,
+		@keys = @Points
+
+
+select pointvalue,transactiondatetime,
+       cast(pointvalue as float) - coalesce(lag(cast(pointvalue as float)) over (order by transactiondatetime), 0) as diff
+from #temp1
