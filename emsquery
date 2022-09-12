@@ -30,7 +30,17 @@ INSERT #temp1 EXEC	@return_value = [dbo].[GetTrendData_MultiDB_DBServer]
 		@to = @to1,
 		@keys = @Points
 
-
 select pointvalue,transactiondatetime,
-       cast(pointvalue as float) - coalesce(lag(cast(pointvalue as float)) over (order by transactiondatetime), 0) as diff
-from #temp1
+       cast(pointvalue as float) - coalesce(lag(cast(pointvalue as float)) over (order by transactiondatetime), 0) as diff 
+from(
+
+select assetid,pointvalue,pointtemplatename,CONVERT(DATETIME,transactiondatetime AT TIME ZONE 'UTC' AT TIME ZONE 'AUS Eastern Standard Time' ) as transactiondatetime, 
+row_number() over(partition by t.pointkey, year(transactiondatetime), month(transactiondatetime), day(transactiondatetime),DATEPART(HOUR,transactiondatetime) order by
+trendkey) as rown
+from #temp1 t
+inner join ibmspoints p on p.pointkey=t.pointkey
+inner join assetmaster am on am.assetkey=p.assetkey
+inner join ibmspointtemplates pt on pt.pointtemplatekey=p.pointtemplatekey
+)rnk
+where rown=1
+order by transactiondatetime desc
