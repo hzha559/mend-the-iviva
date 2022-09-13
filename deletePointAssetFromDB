@@ -1,0 +1,93 @@
+assetid='PS-B-ELE-L01-EM041'
+step=1 # change to 2 after you confirm numbers
+
+
+import pymssql
+conn = pymssql.connect(host='', user='', password='', database='')
+    
+cur = conn.cursor()
+query="""SELECT 
+[AssetID]
+  FROM [83piriest].[dbo].[AssetMaster] am
+  inner join assetcategorymaster ac on ac.assetcategorykey=am.assetcategorykey
+  where assetid like '%ELE%'
+  and assetcategoryid ='Energy Management'"""
+#query=query.replace('ELE',assetid)
+#query=query.replace('Energy Management',assetid)
+cur.execute(query)
+result=cur.fetchall()
+wantlist=[]
+actuallist=[]
+deletelist=[]
+for i in result:
+    actuallist.append(i[0])
+import csv
+with open('meter1.csv', 'r') as file:
+    reader = csv.reader(file)
+    for row in reader:
+        wantlist.append(row[0])
+wantlist[0]=wantlist[0][3:]#remove the first line symbol in csv
+
+for item in actuallist:
+    if item not in wantlist:
+        deletelist.append(item)
+print(len(deletelist))
+
+
+#####do not change anything below, otherwise the db may be affected###
+def cascadedelete(assetid):
+    query='select * from assetmaster where assetid=\'WTF\''
+    query=query.replace('WTF',assetid)
+    cur.execute(query)
+    result=cur.fetchall()
+    if result==[]:
+        print('can\'t find the equipment, check your assetid')
+        
+    else:
+        query='''delete lv
+        from ibmspointlastvalues lv
+        inner join ibmspoints p on p.pointkey=lv.pointkey
+        inner join assetmaster am on am.assetkey=p.assetkey
+        where assetid=\'WTF\' '''
+
+        query=query.replace('WTF',assetid)
+        
+        cur.execute(query)
+        conn.commit() 
+
+        query='''delete p
+        from ibmspoints p 
+        inner join assetmaster am on am.assetkey=p.assetkey
+        where assetid=\'WTF\'
+        '''
+        query=query.replace('WTF',assetid)
+        cur.execute(query)
+        conn.commit() 
+
+        query='''delete e
+        from ibmsequipmentmaster e
+        inner join assetmaster am on am.assetkey=e.assetkey
+        where assetid=\'WTF\'
+        '''
+        query=query.replace('WTF',assetid)
+        cur.execute(query)
+        conn.commit() 
+
+        query='''delete am
+        from assetmaster am
+        where assetid=\'WTF\'
+        '''
+        query=query.replace('WTF',assetid)
+        cur.execute(query)
+        conn.commit()
+        conn.close()
+        print('done ',assetid)
+
+
+
+if step==2:
+    for item in deletelist:
+        cascadedelete(item)
+        
+conn.close()
+
