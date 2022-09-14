@@ -1,3 +1,39 @@
+USE [83piriest]
+GO
+
+/****** Object:  StoredProcedure [dbo].[OI_PerMeter]    Script Date: 14/09/2022 3:43:29 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+
+
+
+
+
+
+-- =============================================
+-- Author:		<Author,,Name>
+-- Create date: <Create Date,,>
+-- Description:	<Description,,>
+-- =============================================
+CREATE            PROCEDURE [dbo].[OI_PerMeter]
+	-- Add the parameters for the stored procedure here
+
+	@from datetime,
+	@to datetime,
+	@asset nvarchar(max)
+AS
+BEGIN
+	-- SET NOCOUNT ON added to prevent extra result sets from
+	-- interfering with SELECT statements.
+	SET NOCOUNT ON;
+
+    -- Insert statements for procedure here
+
 DROP TABLE IF EXISTS #temp1
 CREATE TABLE #temp1
 (
@@ -7,9 +43,6 @@ CREATE TABLE #temp1
    transactiondatetime datetime
 )
 
-declare @from datetime= N'2022-09-01'
-declare		@to datetime= N'2022-09-10'
-declare		@asset nvarchar(max)= N'PS-B-ELE-L05-EM058'
 
 declare @from1 datetime= @from AT TIME ZONE 'AUS Eastern Standard Time' AT TIME ZONE 'UTC'
 declare @to1 datetime = @to AT TIME ZONE 'AUS Eastern Standard Time' AT TIME ZONE 'UTC'
@@ -21,7 +54,7 @@ select @Points=COALESCE(@Points + ',', '') + convert(VARCHAR,p.PointKey)
 FROM IBMSPoints p
   inner join IBMSPointTemplates pt on pt.PointTemplateKey=p.PointTemplateKey
   inner join assetmaster am on am.AssetKey=p.AssetKey
-  where (PointTemplateName ='Total Active Energy')
+  where (PointTemplateName ='Total Generation Reactive')
   and assetid=@asset
   --or PointTemplateName like '%SensorOutCountPeople%')
   --order by AssetID asc
@@ -30,17 +63,27 @@ INSERT #temp1 EXEC	@return_value = [dbo].[GetTrendData_MultiDB_DBServer]
 		@to = @to1,
 		@keys = @Points
 
-select pointvalue,transactiondatetime,
-       cast(pointvalue as float) - coalesce(lag(cast(pointvalue as float)) over (order by transactiondatetime), 0) as diff 
-from(
+--SELECT	'Return Value' = @return_value
+select case when pointvalue is null then 0.0 
+when lag(pointvalue) over (order by transactiondatetime) is null then 0.0
+else cast(pointvalue as float) - coalesce(lag(cast(pointvalue as float)) over (order by transactiondatetime), 0)
+end as diff,
 
-select assetid,pointvalue,pointtemplatename,CONVERT(DATETIME,transactiondatetime AT TIME ZONE 'UTC' AT TIME ZONE 'AUS Eastern Standard Time' ) as transactiondatetime, 
+assetid,date1,transactiondatetime
+from(
+select assetid,cast(pointvalue as float) as pointvalue,pointtemplatename,CONVERT(date, transactiondatetime AT TIME ZONE 'UTC' AT TIME ZONE 'AUS Eastern Standard Time' ) as date1, CONVERT(DATETIME,transactiondatetime AT TIME ZONE 'UTC' AT TIME ZONE 'AUS Eastern Standard Time' ) as transactiondatetime, 
 row_number() over(partition by t.pointkey, year(transactiondatetime), month(transactiondatetime), day(transactiondatetime),DATEPART(HOUR,transactiondatetime) order by
 trendkey) as rown
 from #temp1 t
+
 inner join ibmspoints p on p.pointkey=t.pointkey
 inner join assetmaster am on am.assetkey=p.assetkey
 inner join ibmspointtemplates pt on pt.pointtemplatekey=p.pointtemplatekey
 )rnk
 where rown=1
-order by transactiondatetime desc
+order by transactiondatetime asc
+OFFSET 1 ROWS
+END
+GO
+
+
