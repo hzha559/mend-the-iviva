@@ -1,0 +1,54 @@
+import pymssql
+import requests
+from flask import Flask, jsonify,request
+from datetime import datetime
+app = Flask(__name__)
+#logging.basicConfig(level=logging.DEBUG)
+previous=''
+toggle=1
+a1=''
+a2=''
+
+@app.route('/<which>', methods=['GET'])
+def task1(which):
+        global previous,toggle,a1,a2
+        conn = pymssql.connect(host='10', user='a', password='0', database='r')   
+        cur = conn.cursor()
+        query='''select top (1) devicename,notificationdescription,notificationtime from bathalert
+        order by notificationtime desc'''
+        cur.execute(query)    
+        result = cur.fetchall()
+        conn.close()
+        #print(result[0])
+        if previous!=(str(result[0][0])+str(result[0][1])+str(result[0][2])):
+            toggle=-toggle
+            previous=(str(result[0][0])+str(result[0][1])+str(result[0][2]))
+            if toggle==1:
+                a1=str(result[0][0])+' '+str(result[0][1])
+                a2='normal'
+                if which=='a1':
+                    return 'normal'
+                elif which=='a2':
+                    return str(result[0][0])+' '+str(result[0][1])
+                else:
+                    return 'nothing'
+            else:
+                a2=str(result[0][0])+' '+str(result[0][1])
+                a1='normal'
+                if which=='a2':
+                    return str(result[0][0])+' '+str(result[0][1])
+                elif which=='a1':
+                    return 'normal'
+                else:
+                    return 'nothing'
+        else:
+            if which=='a1':
+                    return a1
+            elif which=='a2':
+                    return a2
+            else:
+                    return 'nothing' 
+
+if __name__ == '__main__':
+    #serve(app, host='0.0.0.0', port=5001)
+    app.run( host='0.0.0.0',port=5005)
