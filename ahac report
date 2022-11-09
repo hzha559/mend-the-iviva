@@ -1,21 +1,4 @@
-USE [510cs]
-GO
-
-/****** Object:  StoredProcedure [dbo].[OI_AHAC_Req]    Script Date: 9/11/2022 3:41:34 PM ******/
-SET ANSI_NULLS ON
-GO
-
-SET QUOTED_IDENTIFIER ON
-GO
-
-
-
-
-CREATE or alter    PROCEDURE [dbo].[OI_AHAC_Req] 
-
-AS
-BEGIN
-
+/****** Script for SelectTopNRows command from SSMS  ******/
 drop table if exists #temp1
 SELECT TOP (1000) 
 groupname, [StartDate]
@@ -32,17 +15,13 @@ groupname, [StartDate]
   inner join [IBMSScheduleZoneMaster] m on g.GroupKey=m.zonekey
   inner join UserMaster u on u.UserKey=s.CreatedUserKey
 
-  select groupname, [StartDate]
-      ,[EndDate]
-      ,[CreatedDateTime]
+  select groupname as Zone, cast([StartDate] at time zone 'UTC' at time zone 'AUS Eastern Standard Time' as smalldatetime)  as StartDate
+      ,cast([EndDate] at time zone 'UTC' at time zone 'AUS Eastern Standard Time' as smalldatetime) as EndDate
+      ,cast([CreatedDateTime] at time zone 'UTC' at time zone 'AUS Eastern Standard Time' as smalldatetime) as CreatedDateTime
       ,[Comment]
       ,[Stage]
-	  ,createuser,
-	  loginid as requester
+	  ,CreateUser,
+	  loginid as Requester
 	  from #temp1 t
   inner join UserMaster u on u.UserKey=t.RequesterKey
-
-	end 
-GO
-
 
