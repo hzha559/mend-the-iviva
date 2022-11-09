@@ -1,0 +1,48 @@
+USE [510cs]
+GO
+
+/****** Object:  StoredProcedure [dbo].[OI_AHAC_Req]    Script Date: 9/11/2022 3:41:34 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+
+
+CREATE or alter    PROCEDURE [dbo].[OI_AHAC_Req] 
+
+AS
+BEGIN
+
+drop table if exists #temp1
+SELECT TOP (1000) 
+groupname, [StartDate]
+      ,[EndDate]
+,[RequesterKey]
+      ,s.[CreatedDateTime]
+      ,s.[CreatedUserKey]
+      ,[Comment]
+      ,[Stage]
+	  ,LoginID as createuser
+	  into #temp1
+  FROM [510cs].[dbo].[IBMSAfterHoursRequestScheduleMaster] s
+  inner join [IBMSScheduleGroupMaps] g on s.ScheduleKey=g.ScheduleKey
+  inner join [IBMSScheduleZoneMaster] m on g.GroupKey=m.zonekey
+  inner join UserMaster u on u.UserKey=s.CreatedUserKey
+
+  select groupname, [StartDate]
+      ,[EndDate]
+      ,[CreatedDateTime]
+      ,[Comment]
+      ,[Stage]
+	  ,createuser,
+	  loginid as requester
+	  from #temp1 t
+  inner join UserMaster u on u.UserKey=t.RequesterKey
+
+	end 
+GO
+
+
