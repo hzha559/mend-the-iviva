@@ -10,15 +10,19 @@ import logging,pymssql,uuid
 from waitress import serve
 app = Flask(__name__)
 logging.basicConfig(level=logging.DEBUG)
-dbhost = '10.35'
-dbuser = 'sa'
+dbhost = '10.'
+dbuser = ''
 dbpassword = ''
 dbdatabase = ''
-
-def auth(arg1):
-    query='''select time1 from [1].[dbo].[Table_1] where key1=\'KEY\''''
-    query=query.replace('KEY',arg1)
-    #print(query)
+#table structure
+#key1	time1	variable	user
+#test1	2022-11-11 14:37:15.000	391f2bc9-ab5d-4bcf-9162-1336dbad8f52	OI
+def auth(user,key):
+    query='''select time1 from [1].[dbo].[API] where key1=\'KEY\'
+and [user]=\'USER\''''
+    query=query.replace('KEY',key)
+    query=query.replace('USER',user)
+    print(query)
     conn = pymssql.connect(host=dbhost, user=dbuser, password=dbpassword)
     cur = conn.cursor()
     cur.execute(query)
@@ -31,7 +35,7 @@ def auth(arg1):
     return result1
              
 def update(arg1,arg2):
-    query='''update [1].[dbo].[Table_1]
+    query='''update [1].[dbo].[API]
 set variable=\'VA\', time1=\'TIME\' where key1=\'KEY\'
 '''
     query=query.replace('KEY',arg1)
@@ -44,10 +48,11 @@ set variable=\'VA\', time1=\'TIME\' where key1=\'KEY\'
     conn.commit()
     conn.close()
 
-def auth1(arg1):
-    query='''select time1 from [1].[dbo].[Table_1] where variable=\'KEY\''''
-    query=query.replace('KEY',arg1)
-    #print(query)
+def auth1(key,user):
+    query='''select time1 from [1].[dbo].[API] where variable=\'KEY\'
+and [user]=\'USER\''''
+    query=query.replace('KEY',key)
+    query=query.replace('USER',user)
     conn = pymssql.connect(host=dbhost, user=dbuser, password=dbpassword)
     cur = conn.cursor()
     cur.execute(query)
@@ -62,13 +67,14 @@ def auth1(arg1):
         else:
             return 1
     else:
-        return 0
+        return 2
     
 @app.route('/login', methods=['POST'])
 def login():
     #print(request.json['key'])
     try:
-        lasttime=auth(request.json['key'])[0]
+        lasttime=auth(request.json['user'],request.json['key'])[0]
+        print(lasttime)
         if lasttime!='':
             if (datetime.now() - lasttime).seconds>60*6:
                 variable=str(uuid.uuid4())
@@ -81,18 +87,19 @@ def login():
     except:
         return 'Wrong Credential'
    
-@app.route('/points/<asset>', methods=['POST'])
-def new1(asset):
-    if auth1(request.json['token'])==1:
-        query='''select assetid,pointtemplatename from ibmspoints p
-        inner join ibmspointtemplates pt on p.pointtemplatekey=pt.pointtemplatekey
-        inner join assetmaster am on am.assetkey=p.assetkey
-        where assetid like '%ASSET%' and enabletrend=1
+@app.route('/points', methods=['POST'])
+def new1():
+    if auth1(request.json['token'],request.json['username'])==1:
+        query='''select assetid,pointtemplatename,pointkey from ibmspoints p
+        inner join ibmspointtemplates pt on p.pointtemplatekey=pt.pointtemplatekey
+        inner join assetmaster am on am.assetkey=p.assetkey
+        where assetid in (ASSET) and enabletrend=1
 '''
         conn = pymssql.connect(host=dbhost, user=dbuser, password=dbpassword, database=dbdatabase)
         cur = conn.cursor()
-        query=query.replace('ASSET',asset)
-        #print(query)
+        print(request.json['asset'])
+        query=query.replace('ASSET',str(request.json['asset'])[1:-1])
+        print(query)
         cur.execute(query)
         result = cur.fetchall()
         conn.close()
@@ -103,37 +110,39 @@ def new1(asset):
                 result1[result[i][0]]={}
             if result[i][1] not in result1[result[i][0]]:
                 result1[result[i][0]][result[i][1]]=[]
-            str1='https://83piriestreet.com/IBMSTrend/trend/04-VAV-09,WTF,2022-10-09,2022-10-11'
-            str1=str1.replace('WTF',result[i][1])
+            str1='https://83piriestreet.com/IBMSTrend/trend/WTF,2022-10-09,2022-10-11'
+            str1=str1.replace('WTF',str(result[i][2]))
             result1[result[i][0]][result[i][1]].append(str1)
         data={'data':result1}
         return data
+    elif auth1(request.json['token'],request.json['username'])==0:
+        return 'Token Timed out'
     else:
-        return 'not authorized'
+        return 'Not Authorized'
 
-@app.route('/trend/<asset>,<point>,<st>,<en>', methods=['POST'])
-def new(asset,point,st,en):
-    if auth1(request.json['token'])==1:
+@app.route('/trend/<pk>,<st>,<en>', methods=['POST'])
+def new(pk,st,en):
+    if auth1(request.json['token'],request.json['username'])==1:
         query='''
 drop table if exists #temp1
 
 USE [83piriest]
 drop table if exists #temp2
-declare @key1 varchar(max)
+declare @key1 varchar(max)='KEY'
 
-select pointkey         into #temp2 from ibmspoints p
-        inner join ibmspointtemplates pt on p.pointtemplatekey=pt.pointtemplatekey
-        inner join assetmaster am on am.assetkey=p.assetkey
-        where assetid like '%ASSET%'
-        and PointTemplateName like '%ZoneTemp%'
+--select pointkey         into #temp2 from ibmspoints p
+        --inner join ibmspointtemplates pt on p.pointtemplatekey=pt.pointtemplatekey
+        --inner join assetmaster am on am.assetkey=p.assetkey
+        --where assetid like '%ASSET%'
+        --and PointTemplateName like '%ZoneTemp%'
 
-set @key1= (select STRING_AGG (pointkey, ',') AS column2 FROM #temp2)
+--set @key1= (select STRING_AGG (pointkey, ',') AS column2 FROM #temp2)
 CREATE TABLE #temp1
 (
-   Trendkey INT,
-   Pointkey INT,
-   PointValue Varchar(max),
-   TransactionDateTime datetime
+   Trendkey INT,
+   Pointkey INT,
+   PointValue Varchar(max),
+   TransactionDateTime datetime
 )
 
 declare @from1 datetime2='2022-10-10a 00:00:00'
@@ -142,12 +151,12 @@ declare @to1 datetime2='2022-10-11b 00:00:00'
 set @from1=@from1 at time zone 'Cen. Australia Standard Time' at time zone 'UTC' 
 set @to1=@to1 at time zone 'Cen. Australia Standard Time' at time zone 'UTC'
 
-DECLARE    @return_value int
-INSERT #temp1 EXEC    
+DECLARE    @return_value int
+INSERT #temp1 EXEC    
 @return_value = [dbo].[GetTrendData_MultiDB_DBServer]
-        @from = @from1,
-        @to = @to1,
-        @keys = @key1
+        @from = @from1,
+        @to = @to1,
+        @keys = @key1
 
 --select * from #temp1
 
@@ -165,10 +174,11 @@ inner join assetmaster am on am.assetkey=p.assetkey
 inner join IBMSPointTemplates pt on p.PointTemplateKey=pt.PointTemplateKey
 order by assetid, time1 asc
 '''
+        
         conn = pymssql.connect(host=dbhost, user=dbuser, password=dbpassword, database=dbdatabase)
         cur = conn.cursor()
-        query=query.replace('ASSET',asset)
-        query=query.replace('ZoneTemp',point)
+        #query=query.replace('ASSET',asset)
+        query=query.replace('KEY',pk)
         query = query.replace('2022-10-10a',st)
         query = query.replace('2022-10-11b',en)
         #print(query)
@@ -195,10 +205,11 @@ order by assetid, time1 asc
             result1[result[i][0]][result[i][1]]['date'].append(str(result[i][3]))
         data={'data':result1}
         return data
+    elif auth1(request.json['token'],request.json['username'])==0:
+        return 'Token Timed out'
     else:
-        return 'not authorized'
+        return 'Not Authorized'
 
 if __name__ == '__main__':
     #serve(app, host='0.0.0.0', port=5001)
     app.run( host='10.35.10.104',port=5005)
-
