@@ -10,13 +10,21 @@ import logging,pymssql,uuid
 from waitress import serve
 app = Flask(__name__)
 logging.basicConfig(level=logging.DEBUG)
-dbhost = '10.'
-dbuser = ''
-dbpassword = ''
-dbdatabase = ''
+dbhost = '10'
+dbuser = 's'
+dbpassword = '0'
+dbdatabase = '8'
 #table structure
 #key1	time1	variable	user
 #test1	2022-11-11 14:37:15.000	391f2bc9-ab5d-4bcf-9162-1336dbad8f52	OI
+def antiInjection(input1):
+    blacklist=['--',' ','=',';','/*','*/']
+    for item in blacklist:
+        if item in input1:
+            return ''
+    return input1
+    
+
 def auth(user,key):
     query='''select time1 from [1].[dbo].[API] where key1=\'KEY\'
 and [user]=\'USER\''''
@@ -73,8 +81,8 @@ and [user]=\'USER\''''
 def login():
     #print(request.json['key'])
     try:
-        lasttime=auth(request.json['user'],request.json['key'])[0]
-        print(lasttime)
+        lasttime=auth(antiInjection(request.json['user']),antiInjection(request.json['key']))[0]
+        #print('here',lasttime)
         if lasttime!='':
             if (datetime.now() - lasttime).seconds>60*6:
                 variable=str(uuid.uuid4())
@@ -86,10 +94,71 @@ def login():
             return 'Wrong Credential'
     except:
         return 'Wrong Credential'
+
+def isvalid(token,user):
+    if auth1(antiInjection(token),antiInjection(user))==1:
+        return 1
+    else:
+        return 0
+    
+@app.route('/allcategories', methods=['POST'])
+#no sql injection risk
+def category():
+    if isvalid(request.json['token'],request.json['username'])==1:
+        query='''SELECT 
+      [AssetCategoryID]
+  FROM [83piriest].[dbo].[AssetCategoryMaster]'''
+        conn = pymssql.connect(host=dbhost, user=dbuser, password=dbpassword, database=dbdatabase)
+        cur = conn.cursor()
+        #print(request.json['asset'])
+        #query=query.replace('ASSET',str(request.json['asset'])[1:-1])
+        #print(query)
+        cur.execute(query)
+        result = cur.fetchall()
+        conn.close()
+        # logging.warning(result)
+        result1 = {'categories':[]}
+        for i in result:
+            result1['categories'].append(i[0])
+        return result1
+    elif auth1(request.json['token'],request.json['username'])==0:
+        return 'Token Timed out'
+    else:
+        return 'Not Authorized'
+
+#location not available at 83
+@app.route('/assets', methods=['POST'])
+#no sql injection risk
+def assets():
+    if isvalid(request.json['token'],request.json['username'])==1:
+        query='''SELECT 
+      assetid
+  FROM [83piriest].[dbo].[AssetCategoryMaster] k
+  inner join AssetMaster a on a.AssetCategoryKey=k.AssetCategoryKey
+  where assetid like '%ARG1%' and AssetCategoryID like '%ARG2%' '''
+        conn = pymssql.connect(host=dbhost, user=dbuser, password=dbpassword, database=dbdatabase)
+        cur = conn.cursor()
+        #print(request.json['asset'])
+        query=query.replace('ARG1',str(request.json['location']))
+        query=query.replace('ARG2',str(request.json['assetcategory']))
+        #print(query)
+        cur.execute(query)
+        result = cur.fetchall()
+        conn.close()
+        # logging.warning(result)
+        result1 = {'assets':[]}
+        for i in result:
+            result1['assets'].append(i[0])
+        return result1
+    elif auth1(request.json['token'],request.json['username'])==0:
+        return 'Token Timed out'
+    else:
+        return 'Not Authorized'
+
    
 @app.route('/points', methods=['POST'])
 def new1():
-    if auth1(request.json['token'],request.json['username'])==1:
+    if isvalid(request.json['token'],request.json['username'])==1:
         query='''select assetid,pointtemplatename,pointkey from ibmspoints p
         inner join ibmspointtemplates pt on p.pointtemplatekey=pt.pointtemplatekey
         inner join assetmaster am on am.assetkey=p.assetkey
@@ -120,9 +189,39 @@ def new1():
     else:
         return 'Not Authorized'
 
+@app.route('/livevalues', methods=['POST'])
+def live1():
+    if isvalid(request.json['token'],request.json['username'])==1:
+        query='''select pointkey,pointvalue,cast(pointvalueupdatedtime at time zone 'UTC' at time zone 'Cen. Australia Standard Time'  as datetime)from ibmspointlastvalues
+where pointkey in (ARG)
+'''
+        conn = pymssql.connect(host=dbhost, user=dbuser, password=dbpassword, database=dbdatabase)
+        cur = conn.cursor()
+        #print(request.json['asset'])
+        query=query.replace('ARG',str(request.json['pointkey']))
+        print(query)
+        cur.execute(query)
+        result = cur.fetchall()
+        conn.close()
+        # logging.warning(result)
+        result1 = {}
+        for i in range(len(result)):
+            #result1[result[i][0]]=[result[i][1],result[i][2]]
+            #str1='https://83piriestreet.com/IBMSTrend/livevalues/WTF'
+            #str1=str1.replace('WTF',str(result[i][0]))
+            #result1[str(result[i][0])]={}
+            print()
+            result1[str(result[i][0])]=[result[i][1],str(result[i][2])]
+        data={'data':result1}
+        return data
+    elif auth1(request.json['token'],request.json['username'])==0:
+        return 'Token Timed out'
+    else:
+        return 'Not Authorized'
+
 @app.route('/trend/<pk>,<st>,<en>', methods=['POST'])
 def new(pk,st,en):
-    if auth1(request.json['token'],request.json['username'])==1:
+    if isvalid(request.json['token'],request.json['username'])==1:
         query='''
 drop table if exists #temp1
 
